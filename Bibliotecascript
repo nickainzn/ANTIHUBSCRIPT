@@ -1,0 +1,154 @@
+--[[
+  Menu com bordas RGB no frame e nos botões, fundo preto translúcido,
+  botão de abrir/fechar, bordas animadas RGB para o menu e botões.
+--]]
+
+local Players = game.Players
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "RGBHub"
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Função cores RGB
+local function GetRainbowColor(speed)
+    local t = tick() * speed
+    return Color3.fromHSV(t % 1, 1, 1)
+end
+
+-- Frame principal (menu)
+local Frame = Instance.new("Frame")
+Frame.Name = "MainFrame"
+Frame.Parent = ScreenGui
+Frame.Size = UDim2.new(0, 240, 0, 220)
+Frame.Position = UDim2.new(0.05, 0, 0.3, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(10,10,10)
+Frame.BackgroundTransparency = 0.35
+Frame.BorderSizePixel = 3
+Frame.BorderColor3 = Color3.fromRGB(255, 0, 0)
+Frame.ClipsDescendants = true
+Frame.Visible = true
+
+local UICornerFrame = Instance.new("UICorner")
+UICornerFrame.CornerRadius = UDim.new(0, 12)
+UICornerFrame.Parent = Frame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = Frame
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 8)
+
+-- Botão de abrir/fechar menu
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Parent = ScreenGui
+ToggleBtn.Size = UDim2.new(0, 40, 0, 40)
+ToggleBtn.Position = UDim2.new(0.05, 0, 0.24, 0)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+ToggleBtn.BackgroundTransparency = 0.35
+ToggleBtn.TextColor3 = Color3.fromRGB(255,255,255)
+ToggleBtn.Text = "≡"
+ToggleBtn.Font = Enum.Font.SourceSansBold
+ToggleBtn.TextSize = 24
+ToggleBtn.BorderSizePixel = 3
+ToggleBtn.BorderColor3 = Color3.fromRGB(255,0,0)
+
+local UICornerToggle = Instance.new("UICorner")
+UICornerToggle.CornerRadius = UDim.new(0, 12)
+UICornerToggle.Parent = ToggleBtn
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    Frame.Visible = not Frame.Visible
+end)
+
+-- Bordas RGB animadas do frame e botão toggle
+RunService.RenderStepped:Connect(function()
+    local rgbFrame = GetRainbowColor(1)
+    Frame.BorderColor3 = rgbFrame
+    ToggleBtn.BorderColor3 = rgbFrame
+end)
+
+-- Função criar botão com borda RGB
+local function CreateButton(name, callback)
+    local btn = Instance.new("TextButton")
+    btn.Parent = Frame
+    btn.Size = UDim2.new(1, -18, 0, 40)
+    btn.Text = name
+    btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    btn.BackgroundTransparency = 0.1
+    btn.TextColor3 = Color3.fromRGB(255,255,255)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 18
+    btn.BorderSizePixel = 3
+    btn.BorderColor3 = Color3.fromRGB(255,0,0)
+    btn.LayoutOrder = 1
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = btn
+
+    -- Bordas RGB animadas do botão
+    RunService.RenderStepped:Connect(function()
+        btn.BorderColor3 = GetRainbowColor(1.5)
+    end)
+
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+-- Plataforma do skate e Homem-Aranha
+local platform = nil
+local connection = nil
+local spiderPlatform = nil
+local spiderConnection = nil
+
+-- Botões principais
+CreateButton("Ativar Skate", function()
+    if not platform then
+        platform = Instance.new("Part")
+        platform.Size = Vector3.new(6,1,6)
+        platform.Anchored = true
+        platform.Color = Color3.fromRGB(0,255,0)
+        platform.Transparency = 0.2
+        platform.Parent = workspace
+
+        connection = RunService.RenderStepped:Connect(function()
+            local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if root and platform then
+                platform.Position = root.Position - Vector3.new(0,3,0)
+            end
+        end)
+    end
+end)
+
+CreateButton("Desativar Skate", function()
+    if platform then platform:Destroy() platform=nil end
+    if connection then connection:Disconnect() connection=nil end
+    if spiderPlatform then spiderPlatform:Destroy() spiderPlatform=nil end
+    if spiderConnection then spiderConnection:Disconnect() spiderConnection=nil end
+end)
+
+CreateButton("Plataforma", function()
+    if not spiderPlatform then
+        local mouse = LocalPlayer:GetMouse()
+        spiderPlatform = Instance.new("Part")
+        spiderPlatform.Size = Vector3.new(6,1,6)
+        spiderPlatform.Anchored = true
+        spiderPlatform.Color = Color3.fromRGB(0,0,255)
+        spiderPlatform.Transparency = 0.2
+        spiderPlatform.Parent = workspace
+
+        spiderConnection = mouse.Move:Connect(function()
+            local unitRay = workspace.CurrentCamera:ScreenPointToRay(mouse.X, mouse.Y)
+            local ray = Ray.new(unitRay.Origin, unitRay.Direction * 1000)
+            local part,pos = workspace:FindPartOnRay(ray, LocalPlayer.Character, false, true)
+            if pos and spiderPlatform then
+                spiderPlatform.CFrame = CFrame.new(pos)
+            end
+        end)
+    end
+end)
+
+CreateButton("RGB Extra", function()
+    print("Botão RGB clicado!")
+end)
